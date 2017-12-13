@@ -4659,9 +4659,17 @@ static int dump_all_tables_in_db(char *database)
     }
     if (numrows && mysql_real_query(mysql, query.str, query.length-1))
     {
-      dynstr_free(&query);
-      DB_error(mysql, "when using LOCK TABLES");
-      /* We shall continue here, if --force was given */
+      //Since we have setup CHARACTER_SET_CLIENT to utf8 there may be chances that
+      //table name is not in utf8
+      char buffer[256];
+      sprintf(buffer,"set session character_set_client= %s", default_charset);
+      mysql_query(mysql, buffer);
+      if (numrows && mysql_real_query(mysql, query.str, query.length-1))
+      {
+        dynstr_free(&query);
+        DB_error(mysql, "when using LOCK TABLES");
+        /* We shall continue here, if --force was given */
+      }
     }
     dynstr_free(&query);                        /* Safe to call twice */
   }
